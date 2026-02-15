@@ -26,14 +26,12 @@ def get_weather(latitude: float, longitude: float) -> dict:
     current = data["current"]
     hourly = data["hourly"]
 
-    hourly_list = []
-    for i in range(len(hourly["time"])):
-        hourly_list.append({
-            "time": hourly["time"][i],
-            "temperature": hourly["temperature_2m"][i],
-            "rain": hourly["rain"][i],
-            "uv_index": hourly["uv_index"][i],
-        })
+    hourly_list = [
+        {"time": t, "temperature": temp, "rain": r, "uv_index": uv}
+        for t, temp, r, uv in zip(
+            hourly["time"], hourly["temperature_2m"], hourly["rain"], hourly["uv_index"]
+        )
+    ]
 
     return {
         "current": {
@@ -71,12 +69,10 @@ def get_air_quality(latitude: float, longitude: float) -> dict:
     current_aqi = data["current"]["european_aqi"]
     hourly = data["hourly"]
 
-    hourly_list = []
-    for i in range(len(hourly["time"])):
-        hourly_list.append({
-            "time": hourly["time"][i],
-            "european_aqi": hourly["european_aqi"][i],
-        })
+    hourly_list = [
+        {"time": t, "european_aqi": aqi}
+        for t, aqi in zip(hourly["time"], hourly["european_aqi"])
+    ]
 
     return {
         "current": {"european_aqi": current_aqi},

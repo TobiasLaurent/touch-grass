@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import random
+
 import click
+import requests
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
@@ -33,6 +36,10 @@ def main(lat: float | None, lon: float | None):
     try:
         # Location
         if lat is not None and lon is not None:
+            if not (-90 <= lat <= 90):
+                raise click.BadParameter(f"Latitude must be between -90 and 90, got {lat}")
+            if not (-180 <= lon <= 180):
+                raise click.BadParameter(f"Longitude must be between -180 and 180, got {lon}")
             location = {"city": "Custom", "region": "", "country": "", "latitude": lat, "longitude": lon}
         else:
             with console.status("[dim]Finding your location...[/dim]"):
@@ -71,8 +78,6 @@ def main(lat: float | None, lon: float | None):
 
         # Verdict
         if result["safe"]:
-            import random
-
             nudge = random.choice(NUDGES)
             console.print(Panel(
                 Text.from_markup(f"[bold green]Go touch grass![/bold green]\n\n[dim]{nudge}[/dim]"),
@@ -86,6 +91,12 @@ def main(lat: float | None, lon: float | None):
                 msg = "[bold red]Keep coding...[/bold red]\n\n[dim]No safe window left today. Try tomorrow![/dim]"
             console.print(Panel(msg, border_style="red"))
 
-    except Exception as e:
+    except click.BadParameter as e:
         console.print(f"[red]Error: {e}[/red]")
+        raise SystemExit(1)
+    except requests.RequestException as e:
+        console.print(f"[red]Network error: {e}[/red]")
+        raise SystemExit(1)
+    except (KeyError, ValueError) as e:
+        console.print(f"[red]Error parsing data: {e}[/red]")
         raise SystemExit(1)
