@@ -27,7 +27,7 @@ def test_check_condition_temp_safe():
 
 
 def test_check_condition_temp_too_cold():
-    safe, reason = check_condition(-5, "temperature")
+    safe, reason = check_condition(-10, "temperature")
     assert safe is False
     assert "too cold" in reason
 
@@ -89,7 +89,7 @@ def test_evaluate_current_all_safe():
 
 
 def test_evaluate_current_one_unsafe():
-    result = evaluate_current(*_make_data(temp=-5))
+    result = evaluate_current(*_make_data(temp=-10))
     assert result["safe"] is False
     unsafe = [c for c in result["checks"] if not c["safe"]]
     assert len(unsafe) == 1
@@ -119,7 +119,7 @@ def test_hour_is_safe_all_good():
 
 
 def test_hour_is_safe_temp_bad():
-    assert _hour_is_safe(_make_weather_hour(temp=-5), _make_aqi_hour()) is False
+    assert _hour_is_safe(_make_weather_hour(temp=-10), _make_aqi_hour()) is False
 
 
 def test_hour_is_safe_uv_bad():

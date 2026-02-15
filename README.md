@@ -4,7 +4,7 @@ A CLI tool that checks real-time weather, UV, and air quality conditions to tell
 
 ## What it checks
 
-- **Temperature** — between 0°C and 35°C
+- **Temperature** — between -5°C and 35°C
 - **UV index** — below 4
 - **Rain** — none
 - **Air quality** — EU AQI below 50 (Good)

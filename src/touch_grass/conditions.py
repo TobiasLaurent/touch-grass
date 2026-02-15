@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 
 THRESHOLDS = {
-    "temp_min": 0,       # °C
+    "temp_min": -5,      # °C
     "temp_max": 35,      # °C
     "uv_max": 4,         # UV index
     "aqi_max": 50,       # EU AQI (Good)
