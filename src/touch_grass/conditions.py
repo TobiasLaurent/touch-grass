@@ -17,7 +17,6 @@ def check_condition(value, name: str) -> tuple[bool, str]:
         return True, f"{name}: no data available"
 
     if name == "temperature":
-        safe = THRESHOLDS["temp_min"] <= value <= THRESHOLDS["temp_max"]
         if value < THRESHOLDS["temp_min"]:
             return False, f"Temperature too cold ({value}°C)"
         if value > THRESHOLDS["temp_max"]:
@@ -25,20 +24,17 @@ def check_condition(value, name: str) -> tuple[bool, str]:
         return True, f"Temperature is {value}°C"
 
     if name == "uv_index":
-        safe = value < THRESHOLDS["uv_max"]
-        if not safe:
+        if value >= THRESHOLDS["uv_max"]:
             return False, f"UV index too high ({value})"
         return True, f"UV index is {value}"
 
     if name == "rain":
-        safe = value <= THRESHOLDS["rain_max"]
-        if not safe:
+        if value > THRESHOLDS["rain_max"]:
             return False, f"It's raining ({value} mm)"
         return True, "No rain"
 
     if name == "air_quality":
-        safe = value < THRESHOLDS["aqi_max"]
-        if not safe:
+        if value >= THRESHOLDS["aqi_max"]:
             return False, f"Air quality poor (EU AQI: {value})"
         return True, f"Air quality good (EU AQI: {value})"
 
@@ -103,6 +99,6 @@ def find_next_safe_window(weather: dict, air_quality: dict) -> str | None:
 
         aqi_hour = hourly_aqi.get(hour["time"])
         if _hour_is_safe(hour, aqi_hour):
-            return hour_time.strftime("%-I:%M %p")
+            return hour_time.strftime("%I:%M %p").lstrip("0")
 
     return None
