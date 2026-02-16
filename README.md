@@ -13,6 +13,15 @@ If conditions aren't safe right now, it scans the hourly forecast and suggests t
 
 ## Install
 
+### Homebrew
+
+```
+brew tap tobiaslaurent/touch-grass https://github.com/tobiaslaurent/touch-grass
+brew install touch-grass
+```
+
+### pip
+
 ```
 pip install .
 ```
