@@ -20,10 +20,25 @@ brew tap tobiaslaurent/touch-grass https://github.com/tobiaslaurent/touch-grass
 brew install touch-grass
 ```
 
+Notes:
+- First install may take a few minutes because Homebrew installs Python and builds a virtual environment for the CLI.
+- Upgrades are usually faster once dependencies are already present.
+
 ### pip
 
 ```
-pip install .
+python3 -m pip install .
+```
+
+## Troubleshooting
+
+If Homebrew fails with an old source URL (for example a `files.pythonhosted.org` `touch_grass-0.1.0.tar.gz` error), refresh your tap metadata and reinstall:
+
+```
+brew update
+brew untap tobiaslaurent/touch-grass
+brew tap tobiaslaurent/touch-grass https://github.com/tobiaslaurent/touch-grass
+brew reinstall touch-grass
 ```
 
 ## Usage
