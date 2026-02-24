@@ -9,7 +9,9 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
+from touch_grass import conditions
 from touch_grass.conditions import evaluate_current, find_next_safe_window
+from touch_grass.config import load_thresholds
 from touch_grass.location import get_location
 from touch_grass.weather import get_air_quality, get_weather
 
@@ -31,9 +33,21 @@ def _status_dot(safe: bool) -> str:
 @click.command()
 @click.option("--lat", type=float, default=None, help="Latitude (skips IP geolocation)")
 @click.option("--lon", type=float, default=None, help="Longitude (skips IP geolocation)")
-def main(lat: float | None, lon: float | None):
+@click.option("--config", "config_path", default=None, help="Path to JSON config file with custom thresholds")
+def main(lat: float | None, lon: float | None, config_path: str | None):
     """Check if it's safe to go outside and touch grass."""
     try:
+        # Load thresholds (config file and/or env vars)
+        try:
+            thresholds = load_thresholds(config_path)
+            conditions.apply_thresholds(thresholds)
+        except FileNotFoundError as e:
+            console.print(f"[red]Configuration error: {e}[/red]")
+            raise SystemExit(1)
+        except ValueError as e:
+            console.print(f"[red]Configuration error: {e}[/red]")
+            raise SystemExit(1)
+
         # Location
         if lat is not None and lon is not None:
             if not (-90 <= lat <= 90):
@@ -97,6 +111,9 @@ def main(lat: float | None, lon: float | None):
     except requests.RequestException as e:
         console.print(f"[red]Network error: {e}[/red]")
         raise SystemExit(1)
-    except (KeyError, ValueError) as e:
-        console.print(f"[red]Error parsing data: {e}[/red]")
+    except KeyError as e:
+        console.print(f"[red]Unexpected API response — missing field: {e}[/red]")
+        raise SystemExit(1)
+    except ValueError as e:
+        console.print(f"[red]Could not parse API response: {e}[/red]")
         raise SystemExit(1)
