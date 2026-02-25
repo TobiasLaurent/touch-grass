@@ -3,9 +3,9 @@ class TouchGrass < Formula
 
   desc "CLI tool that checks if it's safe to go outside and touch grass"
   homepage "https://github.com/tobiaslaurent/touch-grass"
-  url "https://github.com/TobiasLaurent/touch-grass/archive/1761c7329d89002682794e8746b5401ad36b5ce7.tar.gz"
-  version "0.1.0"
-  sha256 "7cd27314170c95a805bab8e4cea6ef6b2b52475c12804dd8c3b7cb63f983a4e1"
+  url "https://github.com/TobiasLaurent/touch-grass/archive/3c6d0324e38ad35590c3aeb7610378a82d2fb02a.tar.gz"
+  version "0.2.0"
+  sha256 "4a61d768b815bfa844658a96bf9dd2c9e2aca3b6f255f0eeabee57db5dfdc51e"
   license "MIT"
 
   depends_on "python@3.12"
