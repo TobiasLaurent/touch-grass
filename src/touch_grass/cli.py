@@ -47,6 +47,9 @@ def main(lat: float | None, lon: float | None, config_path: str | None):
         except ValueError as e:
             console.print(f"[red]Configuration error: {e}[/red]")
             raise SystemExit(1)
+        except OSError as e:
+            console.print(f"[red]Configuration error: {e}[/red]")
+            raise SystemExit(1)
 
         # Location
         if lat is not None and lon is not None:

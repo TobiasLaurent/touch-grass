@@ -154,6 +154,13 @@ def test_cli_bad_config_exits():
     assert "Configuration error" in result.output
 
 
+def test_cli_config_path_directory_exits():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        result = CliRunner().invoke(main, ["--lat", "45.52", "--lon", "-122.68", "--config", tmpdir])
+    assert result.exit_code == 1
+    assert "Configuration error" in result.output
+
+
 @patch("touch_grass.cli.get_air_quality", return_value=SAFE_AQ)
 @patch("touch_grass.cli.get_weather", return_value=SAFE_WEATHER)
 def test_cli_env_var_threshold(mock_weather, mock_aq):

@@ -33,6 +33,8 @@ def load_thresholds(config_path: str | None = None) -> dict:
         path = Path(config_path)
         if not path.exists():
             raise FileNotFoundError(f"Config file not found: {config_path}")
+        if not path.is_file():
+            raise ValueError(f"Config path is not a file: {config_path}")
         with path.open() as f:
             file_data = json.load(f)
         for key in DEFAULT_THRESHOLDS:

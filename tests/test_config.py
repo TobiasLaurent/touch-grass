@@ -44,6 +44,12 @@ def test_load_thresholds_bad_config_path():
         load_thresholds("/nonexistent/path/config.json")
 
 
+def test_load_thresholds_config_path_must_be_file():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        with pytest.raises(ValueError, match="not a file"):
+            load_thresholds(tmpdir)
+
+
 def test_load_thresholds_env_var_overrides(monkeypatch):
     monkeypatch.setenv("TOUCH_GRASS_TEMP_MAX", "28")
     result = load_thresholds()
