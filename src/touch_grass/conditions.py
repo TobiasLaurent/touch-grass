@@ -5,7 +5,7 @@ from datetime import datetime
 THRESHOLDS = {
     "temp_min": -5,      # °C
     "temp_max": 35,      # °C
-    "uv_max": 4,         # UV index
+    "uv_max": 3,         # UV index
     "aqi_max": 50,       # EU AQI (Good)
     "rain_max": 0,       # mm
 }
