@@ -12,7 +12,7 @@ from rich.text import Text
 from touch_grass import conditions
 from touch_grass.conditions import evaluate_current, find_next_safe_window
 from touch_grass.config import load_thresholds
-from touch_grass.location import get_location
+from touch_grass.location import get_aqi_region, get_location
 from touch_grass.weather import get_air_quality, get_weather
 
 console = Console()
@@ -69,13 +69,15 @@ def main(lat: float | None, lon: float | None, config_path: str | None):
             city_parts.append(location["country"])
         location_str = ", ".join(city_parts)
 
+        aqi_region = get_aqi_region(location["country"])
+
         # Fetch data
         with console.status("[dim]Checking conditions...[/dim]"):
             weather = get_weather(location["latitude"], location["longitude"])
             air_quality = get_air_quality(location["latitude"], location["longitude"])
 
         # Evaluate
-        result = evaluate_current(weather, air_quality)
+        result = evaluate_current(weather, air_quality, aqi_region)
 
         # Display
         console.print()
@@ -101,7 +103,7 @@ def main(lat: float | None, lon: float | None, config_path: str | None):
                 border_style="green",
             ))
         else:
-            next_window = find_next_safe_window(weather, air_quality)
+            next_window = find_next_safe_window(weather, air_quality, aqi_region)
             if next_window:
                 msg = f"[bold red]Keep coding...[/bold red]\n\n[dim]Try again at {next_window}[/dim]"
             else:

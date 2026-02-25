@@ -54,7 +54,7 @@ def check_condition(value, name: str) -> tuple[bool, str]:
     return True, ""
 
 
-def evaluate_current(weather: dict, air_quality: dict) -> dict:
+def evaluate_current(weather: dict, air_quality: dict, aqi_region: str = "eu") -> dict:
     """Evaluate current conditions.
 
     Returns dict with:
@@ -65,19 +65,21 @@ def evaluate_current(weather: dict, air_quality: dict) -> dict:
     eu_aqi = air_quality["current"].get("european_aqi")
     us_aqi = air_quality["current"].get("us_aqi")
 
-    # wind_speed and us_aqi are optional — skip rather than fail when absent
+    # wind_speed is optional — skip rather than fail when absent
     checks_input = [
         ("temperature", current.get("temperature")),
         ("uv_index", current.get("uv_index")),
         ("rain", current.get("rain")),
         ("wind_speed", current.get("wind_speed")),
-        ("air_quality", eu_aqi),
-        ("us_air_quality", us_aqi),
     ]
+    if aqi_region == "eu":
+        checks_input.append(("air_quality", eu_aqi))
+    else:
+        checks_input.append(("us_air_quality", us_aqi))
 
     checks = []
     for name, value in checks_input:
-        if value is None and name in ("wind_speed", "us_air_quality"):
+        if value is None and name == "wind_speed":
             continue
         is_safe, reason = check_condition(value, name)
         checks.append({"name": name, "value": value, "safe": is_safe, "reason": reason})
@@ -86,7 +88,7 @@ def evaluate_current(weather: dict, air_quality: dict) -> dict:
     return {"safe": all_safe, "checks": checks}
 
 
-def _hour_is_safe(weather_hour: dict, aqi_hour: dict | None) -> bool:
+def _hour_is_safe(weather_hour: dict, aqi_hour: dict | None, aqi_region: str = "eu") -> bool:
     """Check if a single hourly slot is safe."""
     temp = weather_hour.get("temperature")
     uv = weather_hour.get("uv_index")
@@ -103,17 +105,19 @@ def _hour_is_safe(weather_hour: dict, aqi_hour: dict | None) -> bool:
         return False
 
     if aqi_hour:
-        eu = aqi_hour.get("european_aqi")
-        if eu is not None and eu >= THRESHOLDS["aqi_max"]:
-            return False
-        us = aqi_hour.get("us_aqi")
-        if us is not None and us >= THRESHOLDS["us_aqi_max"]:
-            return False
+        if aqi_region == "eu":
+            eu = aqi_hour.get("european_aqi")
+            if eu is not None and eu >= THRESHOLDS["aqi_max"]:
+                return False
+        else:
+            us = aqi_hour.get("us_aqi")
+            if us is not None and us >= THRESHOLDS["us_aqi_max"]:
+                return False
 
     return True
 
 
-def find_next_safe_window(weather: dict, air_quality: dict) -> str | None:
+def find_next_safe_window(weather: dict, air_quality: dict, aqi_region: str = "eu") -> str | None:
     """Scan hourly forecast for the next safe window.
 
     Returns a time string like "4:00 PM" or None if no safe window today.
@@ -130,7 +134,7 @@ def find_next_safe_window(weather: dict, air_quality: dict) -> str | None:
             continue
 
         aqi_hour = hourly_aqi.get(hour["time"])
-        if _hour_is_safe(hour, aqi_hour):
+        if _hour_is_safe(hour, aqi_hour, aqi_region):
             return hour_time.strftime("%I:%M %p").lstrip("0")
 
     return None

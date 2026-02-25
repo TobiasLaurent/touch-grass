@@ -1,5 +1,18 @@
 import requests
 
+_EU_COUNTRIES = {
+    "AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR", "DE", "GR",
+    "HU", "IE", "IT", "LV", "LT", "LU", "MT", "NL", "PL", "PT", "RO", "SK",
+    "SI", "ES", "SE",           # EU member states
+    "GB", "NO", "IS", "LI",     # EEA / close neighbours
+    "CH", "TR", "RS", "BA", "ME", "MK", "AL", "UA", "MD", "BY", "RU",
+}
+
+
+def get_aqi_region(country: str) -> str:
+    """Return 'eu' for European countries, 'us' otherwise."""
+    return "eu" if country.upper() in _EU_COUNTRIES else "us"
+
 
 def get_location() -> dict:
     """Get user location from IP geolocation.

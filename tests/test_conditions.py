@@ -145,12 +145,24 @@ def test_evaluate_current_multiple_unsafe():
     assert len(unsafe) == 2
 
 
-def test_evaluate_current_includes_wind_and_us_aqi():
+def test_evaluate_current_eu_region_shows_only_eu_aqi():
     weather = {"current": {"temperature": 20, "uv_index": 2, "rain": 0, "wind_speed": 10}}
     air_quality = {"current": {"european_aqi": 30, "us_aqi": 60}}
-    result = evaluate_current(weather, air_quality)
+    result = evaluate_current(weather, air_quality, aqi_region="eu")
     assert result["safe"] is True
-    assert len(result["checks"]) == 6
+    assert len(result["checks"]) == 5  # temp, uv, rain, wind, EU AQI
+    assert any(c["name"] == "air_quality" for c in result["checks"])
+    assert not any(c["name"] == "us_air_quality" for c in result["checks"])
+
+
+def test_evaluate_current_us_region_shows_only_us_aqi():
+    weather = {"current": {"temperature": 20, "uv_index": 2, "rain": 0, "wind_speed": 10}}
+    air_quality = {"current": {"european_aqi": 30, "us_aqi": 60}}
+    result = evaluate_current(weather, air_quality, aqi_region="us")
+    assert result["safe"] is True
+    assert len(result["checks"]) == 5  # temp, uv, rain, wind, US AQI
+    assert any(c["name"] == "us_air_quality" for c in result["checks"])
+    assert not any(c["name"] == "air_quality" for c in result["checks"])
 
 
 def test_evaluate_current_wind_unsafe():
@@ -165,7 +177,7 @@ def test_evaluate_current_wind_unsafe():
 def test_evaluate_current_us_aqi_unsafe():
     weather = {"current": {"temperature": 20, "uv_index": 2, "rain": 0}}
     air_quality = {"current": {"european_aqi": 30, "us_aqi": 150}}
-    result = evaluate_current(weather, air_quality)
+    result = evaluate_current(weather, air_quality, aqi_region="us")
     assert result["safe"] is False
     unsafe = [c for c in result["checks"] if not c["safe"]]
     assert any(c["name"] == "us_air_quality" for c in unsafe)
@@ -225,7 +237,12 @@ def test_hour_is_safe_wind_ok():
 
 
 def test_hour_is_safe_us_aqi_bad():
-    assert _hour_is_safe(_make_weather_hour(), _make_aqi_hour(us_aqi=150)) is False
+    assert _hour_is_safe(_make_weather_hour(), _make_aqi_hour(us_aqi=150), aqi_region="us") is False
+
+
+def test_hour_is_safe_us_aqi_ignored_in_eu_region():
+    # High US AQI should not affect result when region is EU
+    assert _hour_is_safe(_make_weather_hour(), _make_aqi_hour(us_aqi=500), aqi_region="eu") is True
 
 
 def test_hour_is_safe_missing_temperature_key():
