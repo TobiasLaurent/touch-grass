@@ -7,7 +7,7 @@ from pathlib import Path
 DEFAULT_THRESHOLDS = {
     "temp_min": -5,      # °C
     "temp_max": 35,      # °C
-    "uv_max": 4,         # UV index
+    "uv_max": 3,         # UV index
     "aqi_max": 50,       # EU AQI (Good)
     "us_aqi_max": 100,   # US AQI (Moderate threshold)
     "rain_max": 0,       # mm
