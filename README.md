@@ -64,6 +64,18 @@ On first interactive run, touch-grass launches a one-time setup conversation to 
 touch-grass --configure
 ```
 
+For automation/agents, use machine-readable output:
+
+```bash
+touch-grass --json
+```
+
+Planning mode (next best window):
+
+```bash
+touch-grass --plan next-24h
+```
+
 Use a JSON config file for custom thresholds:
 
 ```bash
