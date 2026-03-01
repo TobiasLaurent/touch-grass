@@ -1,0 +1,48 @@
+name: publish-guard
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+
+jobs:
+  check-publish-impact:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed files
+        id: diff
+        run: |
+          base="${{ github.event.pull_request.base.sha }}"
+          head="${{ github.event.pull_request.head.sha }}"
+          git diff --name-only "$base" "$head" > /tmp/changed.txt
+          echo "Changed files:"
+          cat /tmp/changed.txt
+
+      - name: Enforce publish checklist for user-visible changes
+        run: |
+          set -euo pipefail
+
+          changed="/tmp/changed.txt"
+
+          # Heuristic: code/docs in src or CLI behavior likely user-visible.
+          if grep -Eq '^(src/|pyproject.toml|README.md|tests/)' "$changed"; then
+            if ! grep -Eq '^Formula/touch-grass.rb$' "$changed"; then
+              echo "❌ User-visible changes detected but Formula/touch-grass.rb was not updated."
+              echo "If no publish impact, include this exact phrase in PR body:"
+              echo "NO_PUBLISH_IMPACT"
+
+              body="${{ github.event.pull_request.body }}"
+              if [[ "$body" == *"NO_PUBLISH_IMPACT"* ]]; then
+                echo "⚠️ Override phrase found: NO_PUBLISH_IMPACT"
+                exit 0
+              fi
+
+              exit 1
+            fi
+          fi
+
+          echo "✅ publish-guard passed"
