@@ -174,3 +174,40 @@ def test_cli_env_var_threshold(mock_weather, mock_aq):
     # SAFE_WEATHER has temp=22 which is under 25, so still safe
     assert result.exit_code == 0
     assert "Go touch grass!" in result.output
+
+
+@patch("touch_grass.cli.get_air_quality", return_value=SAFE_AQ)
+@patch("touch_grass.cli.get_weather", return_value=SAFE_WEATHER)
+def test_configure_skip_uses_defaults_and_saves(mock_weather, mock_aq):
+    with tempfile.TemporaryDirectory() as tmpdir:
+        env = os.environ.copy()
+        env["TOUCH_GRASS_CONFIG_DIR"] = tmpdir
+        result = CliRunner().invoke(
+            main,
+            ["--configure", "--lat", "45.52", "--lon", "-122.68"],
+            input="y\n",
+            env=env,
+            catch_exceptions=False,
+        )
+        assert result.exit_code == 0
+        assert "Go touch grass!" in result.output
+        assert os.path.exists(os.path.join(tmpdir, "thresholds.json"))
+
+
+@patch("touch_grass.cli.get_air_quality", return_value=SAFE_AQ)
+@patch("touch_grass.cli.get_weather", return_value=SAFE_WEATHER)
+def test_configure_custom_values_affect_result(mock_weather, mock_aq):
+    with tempfile.TemporaryDirectory() as tmpdir:
+        env = os.environ.copy()
+        env["TOUCH_GRASS_CONFIG_DIR"] = tmpdir
+        # no skip, then values: temp_min temp_max uv_max aqi_max us_aqi_max rain_max wind_max
+        user_input = "n\n-5\n20\n3\n50\n100\n0\n50\n"
+        result = CliRunner().invoke(
+            main,
+            ["--configure", "--lat", "45.52", "--lon", "-122.68"],
+            input=user_input,
+            env=env,
+            catch_exceptions=False,
+        )
+        assert result.exit_code == 0
+        assert "Keep coding" in result.output
