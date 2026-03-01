@@ -76,6 +76,13 @@ Planning mode (next best window):
 touch-grass --plan next-24h
 ```
 
+Automation-friendly exit codes:
+
+- `0` = safe
+- `10` = unsafe (JSON mode)
+- `20` = network/API parse issues
+- `30` = config/parameter issues
+
 Use a JSON config file for custom thresholds:
 
 ```bash
