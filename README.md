@@ -58,6 +58,12 @@ Auto-detect location via IP, or provide coordinates:
 touch-grass --lat 45.52 --lon -122.68
 ```
 
+On first interactive run, touch-grass launches a one-time setup conversation to capture your preferred safety thresholds. You can skip it to use defaults, and rerun anytime with:
+
+```bash
+touch-grass --configure
+```
+
 Use a JSON config file for custom thresholds:
 
 ```bash
