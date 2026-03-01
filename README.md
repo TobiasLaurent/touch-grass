@@ -127,6 +127,12 @@ Run tests:
 python3 -m pytest tests/ -v
 ```
 
+Release/publish helper (updates Homebrew formula URL/version/sha):
+
+```bash
+./scripts/release_touch_grass.sh 0.2.2
+```
+
 ## How it works
 
 1. Resolves your location via [ipinfo.io](https://ipinfo.io)
