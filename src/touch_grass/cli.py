@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import random
+import sys
 
 import click
 import requests
@@ -11,7 +12,7 @@ from rich.text import Text
 
 from touch_grass import conditions
 from touch_grass.conditions import evaluate_current, find_next_safe_window
-from touch_grass.config import load_thresholds
+from touch_grass.config import has_user_thresholds, load_thresholds, run_first_time_setup
 from touch_grass.location import get_location
 from touch_grass.weather import get_air_quality, get_weather
 
@@ -34,12 +35,18 @@ def _status_dot(safe: bool) -> str:
 @click.option("--lat", type=float, default=None, help="Latitude (skips IP geolocation)")
 @click.option("--lon", type=float, default=None, help="Longitude (skips IP geolocation)")
 @click.option("--config", "config_path", default=None, help="Path to JSON config file with custom thresholds")
-def main(lat: float | None, lon: float | None, config_path: str | None):
+@click.option("--configure", is_flag=True, help="Run interactive threshold setup")
+def main(lat: float | None, lon: float | None, config_path: str | None, configure: bool):
     """Check if it's safe to go outside and touch grass."""
     try:
-        # Load thresholds (config file and/or env vars)
+        # Load thresholds (first-run setup, config file and/or env vars)
         try:
-            thresholds = load_thresholds(config_path)
+            if configure:
+                thresholds = run_first_time_setup()
+            elif config_path is None and not has_user_thresholds() and sys.stdin.isatty():
+                thresholds = run_first_time_setup()
+            else:
+                thresholds = load_thresholds(config_path)
             conditions.apply_thresholds(thresholds)
         except FileNotFoundError as e:
             console.print(f"[red]Configuration error: {e}[/red]")
