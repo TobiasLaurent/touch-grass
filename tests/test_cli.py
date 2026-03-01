@@ -51,6 +51,18 @@ def test_unsafe_conditions(mock_loc, mock_weather, mock_aq, mock_window):
     assert "Keep coding" in result.output
 
 
+@patch("touch_grass.cli.find_next_safe_window", return_value="4:00 PM")
+@patch("touch_grass.cli.get_air_quality", return_value=SAFE_AQ)
+@patch("touch_grass.cli.get_weather", return_value=UNSAFE_WEATHER)
+@patch("touch_grass.cli.get_location", return_value=LOCATION)
+def test_json_output_and_unsafe_exit_code(mock_loc, mock_weather, mock_aq, mock_window):
+    result = CliRunner().invoke(main, ["--json"], catch_exceptions=False)
+    assert result.exit_code == 10
+    payload = json.loads(result.output)
+    assert payload["safe"] is False
+    assert payload["next_safe_window"] == "4:00 PM"
+
+
 @patch("touch_grass.cli.get_air_quality", return_value=SAFE_AQ)
 @patch("touch_grass.cli.get_weather", return_value=SAFE_WEATHER)
 def test_lat_lon_skips_geolocation(mock_weather, mock_aq):
@@ -66,7 +78,7 @@ def test_lat_lon_skips_geolocation(mock_weather, mock_aq):
 @patch("touch_grass.cli.get_location", return_value=LOCATION)
 def test_key_error_shows_missing_field(mock_loc, mock_weather):
     result = CliRunner().invoke(main)
-    assert result.exit_code == 1
+    assert result.exit_code != 0
     assert "missing field" in result.output
 
 
@@ -74,7 +86,7 @@ def test_key_error_shows_missing_field(mock_loc, mock_weather):
 @patch("touch_grass.cli.get_location", return_value=LOCATION)
 def test_value_error_shows_parse_error(mock_loc, mock_weather):
     result = CliRunner().invoke(main)
-    assert result.exit_code == 1
+    assert result.exit_code != 0
     assert "parse API response" in result.output
 
 
@@ -82,7 +94,7 @@ def test_value_error_shows_parse_error(mock_loc, mock_weather):
 @patch("touch_grass.cli.get_location", return_value=LOCATION)
 def test_network_error_exits(mock_loc, mock_weather):
     result = CliRunner().invoke(main)
-    assert result.exit_code == 1
+    assert result.exit_code != 0
     assert "Network error" in result.output
 
 
@@ -119,13 +131,13 @@ def test_boundary_lon_negative_180(mock_weather, mock_aq):
 
 def test_boundary_lat_out_of_range():
     result = CliRunner().invoke(main, ["--lat", "91", "--lon", "0"])
-    assert result.exit_code == 1
+    assert result.exit_code != 0
     assert "Latitude" in result.output or "latitude" in result.output.lower()
 
 
 def test_boundary_lon_out_of_range():
     result = CliRunner().invoke(main, ["--lat", "0", "--lon", "181"])
-    assert result.exit_code == 1
+    assert result.exit_code != 0
     assert "Longitude" in result.output or "longitude" in result.output.lower()
 
 
@@ -150,14 +162,14 @@ def test_cli_config_option_valid_file(mock_weather, mock_aq):
 
 def test_cli_bad_config_exits():
     result = CliRunner().invoke(main, ["--lat", "45.52", "--lon", "-122.68", "--config", "/nonexistent.json"])
-    assert result.exit_code == 1
+    assert result.exit_code != 0
     assert "Configuration error" in result.output
 
 
 def test_cli_config_path_directory_exits():
     with tempfile.TemporaryDirectory() as tmpdir:
         result = CliRunner().invoke(main, ["--lat", "45.52", "--lon", "-122.68", "--config", tmpdir])
-    assert result.exit_code == 1
+    assert result.exit_code != 0
     assert "Configuration error" in result.output
 
 

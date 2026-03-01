@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import random
 import sys
 
@@ -36,7 +37,9 @@ def _status_dot(safe: bool) -> str:
 @click.option("--lon", type=float, default=None, help="Longitude (skips IP geolocation)")
 @click.option("--config", "config_path", default=None, help="Path to JSON config file with custom thresholds")
 @click.option("--configure", is_flag=True, help="Run interactive threshold setup")
-def main(lat: float | None, lon: float | None, config_path: str | None, configure: bool):
+@click.option("--json", "json_output", is_flag=True, help="Output machine-readable JSON")
+@click.option("--plan", type=click.Choice(["next-24h"]), default=None, help="Planning mode")
+def main(lat: float | None, lon: float | None, config_path: str | None, configure: bool, json_output: bool, plan: str | None):
     """Check if it's safe to go outside and touch grass."""
     try:
         # Load thresholds (first-run setup, config file and/or env vars)
@@ -50,13 +53,13 @@ def main(lat: float | None, lon: float | None, config_path: str | None, configur
             conditions.apply_thresholds(thresholds)
         except FileNotFoundError as e:
             console.print(f"[red]Configuration error: {e}[/red]")
-            raise SystemExit(1)
+            raise SystemExit(30)
         except ValueError as e:
             console.print(f"[red]Configuration error: {e}[/red]")
-            raise SystemExit(1)
+            raise SystemExit(30)
         except OSError as e:
             console.print(f"[red]Configuration error: {e}[/red]")
-            raise SystemExit(1)
+            raise SystemExit(30)
 
         # Location
         if lat is not None and lon is not None:
@@ -83,6 +86,25 @@ def main(lat: float | None, lon: float | None, config_path: str | None, configur
 
         # Evaluate
         result = evaluate_current(weather, air_quality)
+        next_window = find_next_safe_window(weather, air_quality)
+
+        if json_output:
+            payload = {
+                "safe": result["safe"],
+                "location": {
+                    "city": location.get("city"),
+                    "region": location.get("region"),
+                    "country": location.get("country"),
+                    "latitude": location.get("latitude"),
+                    "longitude": location.get("longitude"),
+                },
+                "checks": result["checks"],
+                "next_safe_window": next_window,
+                "thresholds": thresholds,
+                "plan": plan,
+            }
+            click.echo(json.dumps(payload, ensure_ascii=False))
+            raise SystemExit(0 if result["safe"] else 10)
 
         # Display
         console.print()
@@ -100,6 +122,12 @@ def main(lat: float | None, lon: float | None, config_path: str | None, configur
         console.print(table)
         console.print()
 
+        if plan == "next-24h":
+            if next_window:
+                console.print(Panel(f"[bold cyan]Best next window[/bold cyan]\n\n[dim]{next_window}[/dim]", border_style="cyan"))
+            else:
+                console.print(Panel("[bold red]No safe window in next 24h.[/bold red]", border_style="red"))
+
         # Verdict
         if result["safe"]:
             nudge = random.choice(NUDGES)
@@ -108,7 +136,6 @@ def main(lat: float | None, lon: float | None, config_path: str | None, configur
                 border_style="green",
             ))
         else:
-            next_window = find_next_safe_window(weather, air_quality)
             if next_window:
                 msg = f"[bold red]Keep coding...[/bold red]\n\n[dim]Try again at {next_window}[/dim]"
             else:
@@ -117,13 +144,13 @@ def main(lat: float | None, lon: float | None, config_path: str | None, configur
 
     except click.BadParameter as e:
         console.print(f"[red]Error: {e}[/red]")
-        raise SystemExit(1)
+        raise SystemExit(30)
     except requests.RequestException as e:
         console.print(f"[red]Network error: {e}[/red]")
-        raise SystemExit(1)
+        raise SystemExit(20)
     except KeyError as e:
         console.print(f"[red]Unexpected API response — missing field: {e}[/red]")
-        raise SystemExit(1)
+        raise SystemExit(20)
     except ValueError as e:
         console.print(f"[red]Could not parse API response: {e}[/red]")
-        raise SystemExit(1)
+        raise SystemExit(20)
