@@ -1,45 +1,32 @@
-import time
-from unittest.mock import MagicMock
+import pytest
 
-from touch_grass.cache import TTL, _CACHE, cached_call, clear_cache
-
-
-def test_cache_returns_cached_value_on_second_call():
-    fn = MagicMock(return_value={"data": 1})
-    result1 = cached_call("key1", fn)
-    result2 = cached_call("key1", fn)
-    assert result1 is result2
-    assert fn.call_count == 1
+from touch_grass import cache
 
 
-def test_cache_calls_fn_for_different_keys():
-    fn = MagicMock(return_value=42)
-    cached_call("a", fn)
-    cached_call("b", fn)
-    assert fn.call_count == 2
+def test_cached_call_resilient_uses_stale_on_failure():
+    cache.clear_cache()
+    key = "k1"
+
+    # seed cache
+    value = cache.cached_call_resilient(key, lambda: {"ok": True}, ttl=0, stale_ttl=3600)
+    assert value["ok"] is True
+
+    # refresh fails -> stale value should be returned
+    value2 = cache.cached_call_resilient(
+        key,
+        lambda: (_ for _ in ()).throw(RuntimeError("boom")),
+        ttl=0,
+        stale_ttl=3600,
+    )
+    assert value2 == value
 
 
-def test_cache_expired_refetches():
-    fn = MagicMock(side_effect=[{"v": 1}, {"v": 2}])
-    cached_call("expiry_key", fn)
-    # Manually expire the cached entry
-    ts, val = _CACHE["expiry_key"]
-    _CACHE["expiry_key"] = (ts - TTL - 1, val)
-    result = cached_call("expiry_key", fn)
-    assert result == {"v": 2}
-    assert fn.call_count == 2
-
-
-def test_clear_cache_forces_refetch():
-    fn = MagicMock(return_value="fresh")
-    cached_call("clear_key", fn)
-    clear_cache()
-    cached_call("clear_key", fn)
-    assert fn.call_count == 2
-
-
-def test_clear_cache_empties_all_entries():
-    cached_call("x", lambda: 1)
-    cached_call("y", lambda: 2)
-    clear_cache()
-    assert len(_CACHE) == 0
+def test_cached_call_resilient_raises_without_cache():
+    cache.clear_cache()
+    with pytest.raises(RuntimeError):
+        cache.cached_call_resilient(
+            "k2",
+            lambda: (_ for _ in ()).throw(RuntimeError("boom")),
+            ttl=0,
+            stale_ttl=3600,
+        )

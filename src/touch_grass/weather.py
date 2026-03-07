@@ -1,6 +1,6 @@
 import requests
 
-from touch_grass.cache import cached_call
+from touch_grass.cache import cached_call_resilient
 
 
 def get_weather(latitude: float, longitude: float) -> dict:
@@ -10,9 +10,11 @@ def get_weather(latitude: float, longitude: float) -> dict:
         current: {temperature, rain, uv_index, wind_speed}
         hourly: [{time, temperature, rain, uv_index, wind_speed}, ...]
         timezone: str
+
+    Uses resilient cache fallback for transient API failures.
     """
     key = f"weather:{latitude}:{longitude}"
-    return cached_call(key, lambda: _fetch_weather(latitude, longitude))
+    return cached_call_resilient(key, lambda: _fetch_weather(latitude, longitude))
 
 
 def _fetch_weather(latitude: float, longitude: float) -> dict:
@@ -63,9 +65,11 @@ def get_air_quality(latitude: float, longitude: float) -> dict:
     Returns dict with:
         current: {european_aqi, us_aqi}
         hourly: [{time, european_aqi, us_aqi}, ...]
+
+    Uses resilient cache fallback for transient API failures.
     """
     key = f"air_quality:{latitude}:{longitude}"
-    return cached_call(key, lambda: _fetch_air_quality(latitude, longitude))
+    return cached_call_resilient(key, lambda: _fetch_air_quality(latitude, longitude))
 
 
 def _fetch_air_quality(latitude: float, longitude: float) -> dict:
