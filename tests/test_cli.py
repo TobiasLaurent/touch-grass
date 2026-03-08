@@ -51,11 +51,12 @@ def test_unsafe_conditions(mock_loc, mock_weather, mock_aq, mock_window):
     assert "Keep coding" in result.output
 
 
+@patch("touch_grass.cli.forecast_days", return_value=[])
 @patch("touch_grass.cli.find_next_safe_window", return_value="4:00 PM")
 @patch("touch_grass.cli.get_air_quality", return_value=SAFE_AQ)
 @patch("touch_grass.cli.get_weather", return_value=UNSAFE_WEATHER)
 @patch("touch_grass.cli.get_location", return_value=LOCATION)
-def test_json_output_and_unsafe_exit_code(mock_loc, mock_weather, mock_aq, mock_window):
+def test_json_output_and_unsafe_exit_code(mock_loc, mock_weather, mock_aq, mock_window, mock_forecast):
     result = CliRunner().invoke(main, ["--json"], catch_exceptions=False)
     assert result.exit_code == 10
     payload = json.loads(result.output)
@@ -223,3 +224,21 @@ def test_configure_custom_values_affect_result(mock_weather, mock_aq):
         )
         assert result.exit_code == 0
         assert "Keep coding" in result.output
+
+
+@patch("touch_grass.cli.forecast_days")
+@patch("touch_grass.cli.find_next_safe_window", return_value="4:00 PM")
+@patch("touch_grass.cli.get_air_quality", return_value=SAFE_AQ)
+@patch("touch_grass.cli.get_weather", return_value=SAFE_WEATHER)
+@patch("touch_grass.cli.get_location", return_value=LOCATION)
+def test_forecast_json_output(mock_loc, mock_weather, mock_aq, mock_window, mock_forecast):
+    mock_forecast.return_value = [
+        {"date": "2026-03-09", "weekday": "Monday", "safe": True, "best_window": "10:00 AM", "safe_hour_count": 4, "primary_blockers": [], "metrics": {}},
+        {"date": "2026-03-10", "weekday": "Tuesday", "safe": False, "best_window": None, "safe_hour_count": 0, "primary_blockers": ["uv_index"], "metrics": {}},
+    ]
+    result = CliRunner().invoke(main, ["--forecast", "7", "--json"], catch_exceptions=False)
+    assert result.exit_code == 0
+    payload = json.loads(result.output)
+    assert payload["forecast_count"] == 7
+    assert len(payload["forecast_days"]) == 2
+    assert payload["forecast_days"][0]["weekday"] == "Monday"
