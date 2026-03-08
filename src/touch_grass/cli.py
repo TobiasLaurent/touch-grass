@@ -12,7 +12,7 @@ from rich.table import Table
 from rich.text import Text
 
 from touch_grass import conditions
-from touch_grass.conditions import evaluate_current, find_next_safe_window
+from touch_grass.conditions import evaluate_current, find_next_safe_window, forecast_days
 from touch_grass.config import has_user_thresholds, load_thresholds, run_first_time_setup
 from touch_grass.location import get_location
 from touch_grass.weather import get_air_quality, get_weather
@@ -39,7 +39,8 @@ def _status_dot(safe: bool) -> str:
 @click.option("--configure", is_flag=True, help="Run interactive threshold setup")
 @click.option("--json", "json_output", is_flag=True, help="Output machine-readable JSON")
 @click.option("--plan", type=click.Choice(["next-24h"]), default=None, help="Planning mode")
-def main(lat: float | None, lon: float | None, config_path: str | None, configure: bool, json_output: bool, plan: str | None):
+@click.option("--forecast", type=click.IntRange(1, 7), default=None, help="Return a day-by-day forecast for the next N days")
+def main(lat: float | None, lon: float | None, config_path: str | None, configure: bool, json_output: bool, plan: str | None, forecast: int | None):
     """Check if it's safe to go outside and touch grass."""
     try:
         # Load thresholds (first-run setup, config file and/or env vars)
@@ -79,14 +80,17 @@ def main(lat: float | None, lon: float | None, config_path: str | None, configur
             city_parts.append(location["country"])
         location_str = ", ".join(city_parts)
 
+        forecast_days_requested = forecast if forecast is not None else 1
+
         # Fetch data
         with console.status("[dim]Checking conditions...[/dim]"):
-            weather = get_weather(location["latitude"], location["longitude"])
-            air_quality = get_air_quality(location["latitude"], location["longitude"])
+            weather = get_weather(location["latitude"], location["longitude"], forecast_days=forecast_days_requested)
+            air_quality = get_air_quality(location["latitude"], location["longitude"], forecast_days=forecast_days_requested)
 
         # Evaluate
         result = evaluate_current(weather, air_quality)
         next_window = find_next_safe_window(weather, air_quality)
+        forecast_summary = forecast_days(weather, air_quality, forecast) if forecast else None
 
         if json_output:
             payload = {
@@ -103,6 +107,9 @@ def main(lat: float | None, lon: float | None, config_path: str | None, configur
                 "thresholds": thresholds,
                 "plan": plan,
             }
+            if forecast_summary is not None:
+                payload["forecast_days"] = forecast_summary
+                payload["forecast_count"] = forecast
             click.echo(json.dumps(payload, ensure_ascii=False))
             raise SystemExit(0 if result["safe"] else 10)
 

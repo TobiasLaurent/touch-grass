@@ -76,6 +76,12 @@ Planning mode (next best window):
 touch-grass --plan next-24h
 ```
 
+Week forecast (agent-friendly):
+
+```bash
+touch-grass --forecast 7 --json
+```
+
 Automation-friendly exit codes:
 
 - `0` = safe

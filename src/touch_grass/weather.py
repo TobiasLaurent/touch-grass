@@ -3,7 +3,7 @@ import requests
 from touch_grass.cache import cached_call_resilient
 
 
-def get_weather(latitude: float, longitude: float) -> dict:
+def get_weather(latitude: float, longitude: float, forecast_days: int = 1) -> dict:
     """Fetch current conditions and hourly forecast from Open-Meteo.
 
     Returns dict with:
@@ -13,11 +13,11 @@ def get_weather(latitude: float, longitude: float) -> dict:
 
     Uses resilient cache fallback for transient API failures.
     """
-    key = f"weather:{latitude}:{longitude}"
-    return cached_call_resilient(key, lambda: _fetch_weather(latitude, longitude))
+    key = f"weather:{latitude}:{longitude}:{forecast_days}"
+    return cached_call_resilient(key, lambda: _fetch_weather(latitude, longitude, forecast_days))
 
 
-def _fetch_weather(latitude: float, longitude: float) -> dict:
+def _fetch_weather(latitude: float, longitude: float, forecast_days: int) -> dict:
     resp = requests.get(
         "https://api.open-meteo.com/v1/forecast",
         params={
@@ -25,7 +25,7 @@ def _fetch_weather(latitude: float, longitude: float) -> dict:
             "longitude": longitude,
             "current": "temperature_2m,rain,uv_index,windspeed_10m",
             "hourly": "temperature_2m,rain,uv_index,windspeed_10m",
-            "forecast_days": 1,
+            "forecast_days": forecast_days,
             "timezone": "auto",
         },
         timeout=10,
@@ -59,7 +59,7 @@ def _fetch_weather(latitude: float, longitude: float) -> dict:
     }
 
 
-def get_air_quality(latitude: float, longitude: float) -> dict:
+def get_air_quality(latitude: float, longitude: float, forecast_days: int = 1) -> dict:
     """Fetch current and hourly air quality from Open-Meteo.
 
     Returns dict with:
@@ -68,11 +68,11 @@ def get_air_quality(latitude: float, longitude: float) -> dict:
 
     Uses resilient cache fallback for transient API failures.
     """
-    key = f"air_quality:{latitude}:{longitude}"
-    return cached_call_resilient(key, lambda: _fetch_air_quality(latitude, longitude))
+    key = f"air_quality:{latitude}:{longitude}:{forecast_days}"
+    return cached_call_resilient(key, lambda: _fetch_air_quality(latitude, longitude, forecast_days))
 
 
-def _fetch_air_quality(latitude: float, longitude: float) -> dict:
+def _fetch_air_quality(latitude: float, longitude: float, forecast_days: int) -> dict:
     resp = requests.get(
         "https://air-quality-api.open-meteo.com/v1/air-quality",
         params={
@@ -80,7 +80,7 @@ def _fetch_air_quality(latitude: float, longitude: float) -> dict:
             "longitude": longitude,
             "current": "european_aqi,us_aqi",
             "hourly": "european_aqi,us_aqi",
-            "forecast_days": 1,
+            "forecast_days": forecast_days,
             "timezone": "auto",
         },
         timeout=10,
